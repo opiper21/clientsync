@@ -1,34 +1,58 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, MoreHorizontal, Calendar, MessageSquare } from 'lucide-react';
+import { Plus, MoreHorizontal, Calendar, MessageSquare, Trash2 } from 'lucide-react';
+
+const API_URL = 'http://localhost:5000/api';
 
 interface Task {
-  id: number;
+  _id: string;
   title: string;
   tag: string;
   color: string;
   comments: number;
+  status: string;
 }
 
-// Mock data — we'll swap this for real API data soon 🔌
-const initialTasks: Task[] = [
-  { id: 1, title: 'Design Homepage Mockup', tag: 'Design', color: 'bg-purple-500', comments: 3 },
-  { id: 2, title: 'Setup MongoDB Database', tag: 'Backend', color: 'bg-green-500', comments: 1 },
-  { id: 3, title: 'Integrate Stripe Payments', tag: 'Feature', color: 'bg-blue-500', comments: 5 },
-];
-
 function App() {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const addTask = () => {
-    const newTask: Task = {
-      id: Date.now(),
-      title: `New Task #${tasks.length + 1}`,
-      tag: 'Feature',
-      color: 'bg-blue-500',
-      comments: 0,
-    };
-    setTasks([...tasks, newTask]);
+  // READ — load tasks from MongoDB on mount
+  useEffect(() => {
+    fetch(`${API_URL}/tasks`)
+      .then((res) => res.json())
+      .then((data) => setTasks(data))
+      .catch((err) => console.error('Failed to fetch tasks:', err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  // CREATE — save a new task to MongoDB
+  const addTask = async () => {
+    try {
+      const res = await fetch(`${API_URL}/tasks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: `New Task #${tasks.length + 1}`,
+          tag: 'Feature',
+          color: 'bg-blue-500',
+        }),
+      });
+      const newTask = await res.json();
+      setTasks([newTask, ...tasks]);
+    } catch (err) {
+      console.error('Failed to create task:', err);
+    }
+  };
+
+  // DELETE — remove a task from MongoDB
+  const deleteTask = async (id: string) => {
+    try {
+      await fetch(`${API_URL}/tasks/${id}`, { method: 'DELETE' });
+      setTasks(tasks.filter((t) => t._id !== id));
+    } catch (err) {
+      console.error('Failed to delete task:', err);
+    }
   };
 
   return (
@@ -63,46 +87,57 @@ function App() {
             <MoreHorizontal size={20} className="text-gray-500 cursor-pointer hover:text-gray-300" />
           </div>
 
-          <div className="space-y-3">
-            {tasks.map((task) => (
-              <motion.div
-                key={task.id}
-                layout
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                whileHover={{ scale: 1.02 }}
-                className="bg-gray-800 p-4 rounded-lg border border-gray-700 cursor-grab active:cursor-grabbing shadow-sm"
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <span className={`text-xs font-medium px-2 py-1 rounded text-white ${task.color}`}>
-                    {task.tag}
-                  </span>
-                </div>
-                <h3 className="font-medium text-gray-100 mb-3">{task.title}</h3>
-                <div className="flex items-center justify-between text-gray-400 text-sm">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1">
-                      <Calendar size={14} />
-                      <span>Oct 24</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <MessageSquare size={14} />
-                      <span>{task.comments}</span>
-                    </div>
+          {loading ? (
+            <p className="text-gray-500 text-center py-8">Loading tasks from MongoDB…</p>
+          ) : (
+            <div className="space-y-3">
+              {tasks.map((task) => (
+                <motion.div
+                  key={task._id}
+                  layout
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  whileHover={{ scale: 1.02 }}
+                  className="bg-gray-800 p-4 rounded-lg border border-gray-700 cursor-grab active:cursor-grabbing shadow-sm relative group"
+                >
+                  <button
+                    onClick={() => deleteTask(task._id)}
+                    className="absolute top-3 right-3 text-gray-600 opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all"
+                    title="Delete task"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                  <div className="flex justify-between items-start mb-2">
+                    <span className={`text-xs font-medium px-2 py-1 rounded text-white ${task.color}`}>
+                      {task.tag}
+                    </span>
                   </div>
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-purple-500" />
-                </div>
-              </motion.div>
-            ))}
+                  <h3 className="font-medium text-gray-100 mb-3">{task.title}</h3>
+                  <div className="flex items-center justify-between text-gray-400 text-sm">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-1">
+                        <Calendar size={14} />
+                        <span>Oct 24</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <MessageSquare size={14} />
+                        <span>{task.comments}</span>
+                      </div>
+                    </div>
+                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-purple-500" />
+                  </div>
+                </motion.div>
+              ))}
 
-            {/* Add Task Button */}
-            <button
-              onClick={addTask}
-              className="w-full py-3 border-2 border-dashed border-gray-700 rounded-lg text-gray-500 hover:border-gray-500 hover:text-gray-300 transition-colors flex items-center justify-center gap-2"
-            >
-              <Plus size={16} /> Add a task
-            </button>
-          </div>
+              {/* Add Task Button */}
+              <button
+                onClick={addTask}
+                className="w-full py-3 border-2 border-dashed border-gray-700 rounded-lg text-gray-500 hover:border-gray-500 hover:text-gray-300 transition-colors flex items-center justify-center gap-2"
+              >
+                <Plus size={16} /> Add a task
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
