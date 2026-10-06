@@ -19,6 +19,7 @@ interface Task {
 function App() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [route, setRoute] = useState(window.location.hash);
 
   // READ — load tasks from MongoDB on mount
   useEffect(() => {
@@ -39,17 +40,17 @@ function App() {
     socket.on('task:deleted', (task: Task) => {
       setTasks((prev) => prev.filter((t) => t._id !== task._id));
     });
-    const [route, setRoute] = useState(window.location.hash);
-useEffect(() => {
-  const onHash = () => setRoute(window.location.hash);
-  window.addEventListener('hashchange', onHash);
-  return () => window.removeEventListener('hashchange', onHash);
-}, []);
-if (route.startsWith('#/bid')) return <BidDashboard />;
     return () => {
       socket.off('task:created');
       socket.off('task:deleted');
     };
+  }, []);
+
+  // HASH ROUTING — listen for #/bid
+  useEffect(() => {
+    const onHash = () => setRoute(window.location.hash);
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
   // CREATE — save a new task to MongoDB
@@ -81,10 +82,12 @@ if (route.startsWith('#/bid')) return <BidDashboard />;
     }
   };
 
+  // 🎰 OFFERFLOW ROUTE
+  if (route.startsWith('#/bid')) return <BidDashboard />;
+
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100 p-4 sm:p-8 font-sans">
       <div className="max-w-4xl mx-auto">
-        {/* Header - Stacks on mobile, side-by-side on desktop */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
@@ -100,7 +103,6 @@ if (route.startsWith('#/bid')) return <BidDashboard />;
           </button>
         </div>
 
-        {/* Kanban Column */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 w-full max-w-md">
           <div className="flex justify-between items-center mb-4">
             <h2 className="font-semibold text-gray-200 flex items-center gap-2">
@@ -155,7 +157,6 @@ if (route.startsWith('#/bid')) return <BidDashboard />;
                 </motion.div>
               ))}
 
-              {/* Add Task Button */}
               <button
                 onClick={addTask}
                 className="w-full py-3 border-2 border-dashed border-gray-700 rounded-lg text-gray-500 hover:border-gray-500 hover:text-gray-300 transition-colors flex items-center justify-center gap-2"
