@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, MoreHorizontal, Calendar, MessageSquare, Trash2 } from 'lucide-react';
+import { io } from 'socket.io-client';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000');
 
 interface Task {
   _id: string;
@@ -24,6 +26,22 @@ function App() {
       .then((data) => setTasks(data))
       .catch((err) => console.error('Failed to fetch tasks:', err))
       .finally(() => setLoading(false));
+  }, []);
+
+  // REAL-TIME — live updates from the server
+  useEffect(() => {
+    socket.on('task:created', (task: Task) => {
+      setTasks((prev) =>
+        prev.some((t) => t._id === task._id) ? prev : [task, ...prev]
+      );
+    });
+    socket.on('task:deleted', (task: Task) => {
+      setTasks((prev) => prev.filter((t) => t._id !== task._id));
+    });
+    return () => {
+      socket.off('task:created');
+      socket.off('task:deleted');
+    };
   }, []);
 
   // CREATE — save a new task to MongoDB
@@ -97,16 +115,16 @@ function App() {
                   layout
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  whileHover={{ scale: 1.02 }}
+                  whileHover={{ scale: 1.01 }}
                   className="bg-gray-800 p-4 rounded-lg border border-gray-700 cursor-grab active:cursor-grabbing shadow-sm relative group"
                 >
                   <button
-                    onClick={() => deleteTask(task._id)}
-                    className="absolute top-3 right-3 text-gray-600 opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all"
-                    title="Delete task"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+  onClick={() => deleteTask(task._id)}
+  className="absolute top-2 right-2 p-2 rounded-md text-gray-500 hover:text-red-400 hover:bg-gray-700/50 transition-colors"
+  title="Delete task"
+>
+  <Trash2 size={16} />
+</button>
                   <div className="flex justify-between items-start mb-2">
                     <span className={`text-xs font-medium px-2 py-1 rounded text-white ${task.color}`}>
                       {task.tag}
