@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, MoreHorizontal, Calendar, MessageSquare, Trash2 } from 'lucide-react';
 import { io } from 'socket.io-client';
+import BidDashboard from './BidDashboard';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000');
@@ -38,6 +39,13 @@ function App() {
     socket.on('task:deleted', (task: Task) => {
       setTasks((prev) => prev.filter((t) => t._id !== task._id));
     });
+    const [route, setRoute] = useState(window.location.hash);
+useEffect(() => {
+  const onHash = () => setRoute(window.location.hash);
+  window.addEventListener('hashchange', onHash);
+  return () => window.removeEventListener('hashchange', onHash);
+}, []);
+if (route.startsWith('#/bid')) return <BidDashboard />;
     return () => {
       socket.off('task:created');
       socket.off('task:deleted');

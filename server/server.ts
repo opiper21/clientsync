@@ -5,6 +5,7 @@ import mongoose from 'mongoose';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import taskRoutes from './routes/tasks';
+import bidRoutes from './routes/bids';
 
 dotenv.config();
 
@@ -26,6 +27,9 @@ const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: { origin: process.env.CLIENT_URL || 'http://localhost:5173', methods: ['GET', 'POST'] },
 });
+
+app.set('io', io);
+app.use('/api/bids', bidRoutes);
 
 io.on('connection', (socket) => {
   console.log('⚡ Client connected:', socket.id);
