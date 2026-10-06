@@ -74,10 +74,10 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 p-8 font-sans">
+    <div className="min-h-screen bg-gray-950 text-gray-100 p-4 sm:p-8 font-sans">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
+        {/* Header - Stacks on mobile, side-by-side on desktop */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
               ClientSync
@@ -86,7 +86,7 @@ function App() {
           </div>
           <button
             onClick={addTask}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-medium transition-colors"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap self-start sm:self-auto"
           >
             <Plus size={18} /> New Task
           </button>
@@ -119,12 +119,12 @@ function App() {
                   className="bg-gray-800 p-4 rounded-lg border border-gray-700 cursor-grab active:cursor-grabbing shadow-sm relative group"
                 >
                   <button
-  onClick={() => deleteTask(task._id)}
-  className="absolute top-2 right-2 p-2 rounded-md text-gray-500 hover:text-red-400 hover:bg-gray-700/50 transition-colors"
-  title="Delete task"
->
-  <Trash2 size={16} />
-</button>
+                    onClick={() => deleteTask(task._id)}
+                    className="absolute top-2 right-2 p-2 rounded-md text-gray-500 hover:text-red-400 hover:bg-gray-700/50 transition-colors"
+                    title="Delete task"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                   <div className="flex justify-between items-start mb-2">
                     <span className={`text-xs font-medium px-2 py-1 rounded text-white ${task.color}`}>
                       {task.tag}
